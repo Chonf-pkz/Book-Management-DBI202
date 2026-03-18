@@ -1,0 +1,36 @@
+-- Số lượng sách theo từng nhà xuất bản
+SELECT p.publisher_name, COUNT(b.book_id) AS total_books
+FROM publisher p
+JOIN book b ON p.publisher_id = b.publisher_id
+GROUP BY p.publisher_name;
+
+
+-- Tổng tiền phạt của từng thành viên
+SELECT m.name, SUM(ld.sum_of_fine) AS total_fine_amount
+FROM member m
+JOIN loan l ON m.member_id = l.member_id
+JOIN loan_detail ld ON l.loan_id = ld.loan_id
+GROUP BY m.member_id, m.name;
+
+
+-- Số lượng bản sao sách theo từng thể loại
+SELECT c.category_name, COUNT(bcop.book_copy_id) AS total_copies
+FROM category c
+JOIN book_category bc ON c.category_id = bc.category_id
+JOIN book_copy bcop ON bc.book_id = bcop.book_id
+GROUP BY c.category_name;
+
+
+-- Số lượt mượn của từng cuốn sách
+SELECT b.name_book, COUNT(ld.loan_id) AS times_borrowed
+FROM book b
+JOIN book_copy bc ON b.book_id = bc.book_id
+JOIN loan_detail ld ON bc.book_copy_id = ld.book_copy_id
+GROUP BY b.book_id, b.name_book;
+
+
+-- Số lượng sách do mỗi thủ thư quản lý
+SELECT lib.librarian_name, COUNT(b.book_id) AS managed_books
+FROM librarian lib
+JOIN book b ON lib.librarian_id = b.librarian_id
+GROUP BY lib.librarian_id, lib.librarian_name;
