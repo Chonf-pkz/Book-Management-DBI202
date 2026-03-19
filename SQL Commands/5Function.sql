@@ -1,160 +1,93 @@
 USE Group4
 GO
 
--- Xóa các procedure nếu đã tồn tại
-IF OBJECT_ID('sp_MuonSach') IS NOT NULL DROP PROCEDURE sp_MuonSach;
-IF OBJECT_ID('sp_TraSach') IS NOT NULL DROP PROCEDURE sp_TraSach;
-IF OBJECT_ID('sp_ThemThanhVien') IS NOT NULL DROP PROCEDURE sp_ThemThanhVien;
-IF OBJECT_ID('sp_ThemSachVaoDanhMuc') IS NOT NULL DROP PROCEDURE sp_ThemSachVaoDanhMuc;
-IF OBJECT_ID('sp_XoaSach') IS NOT NULL DROP PROCEDURE sp_XoaSach;
+-- Xóa các function nếu đã tồn tại
+IF OBJECT_ID('fn_TongTienPhat') IS NOT NULL DROP FUNCTION fn_TongTienPhat;
+IF OBJECT_ID('fn_SoSachDangMuon') IS NOT NULL DROP FUNCTION fn_SoSachDangMuon;
+IF OBJECT_ID('fn_DanhSachSachQuaHan') IS NOT NULL DROP FUNCTION fn_DanhSachSachQuaHan;
+IF OBJECT_ID('fn_SoLuongBanSao') IS NOT NULL DROP FUNCTION fn_SoLuongBanSao;
+IF OBJECT_ID('fn_SachTheoTheLoai') IS NOT NULL DROP FUNCTION fn_SachTheoTheLoai;
 GO
 
--- 1. Cho phép mượn sách (Kiểm tra xem độc giả có bị quá hạn không)
-CREATE PROCEDURE sp_MuonSach 
-    @member_id VARCHAR(20),
-    @librarian_id VARCHAR(20),
-    @policy_id VARCHAR(20),
-    @loan_id VARCHAR(20)
+-- 1. Function (Scalar): Tính tổng số tiền phạt của một độc giả bất kỳ
+CREATE FUNCTION fn_TongTienPhat (@member_id VARCHAR(20))
+RETURNS FLOAT
 AS
 BEGIN
-    DECLARE @SoSachQuaHan INT;
-    
-    -- Đếm số sách đang quá hạn của thành viên này
-    SELECT @SoSachQuaHan = COUNT(*)
-    FROM loan l 
+    DECLARE @TongTien FLOAT = 0;
+    SELECT @TongTien = SUM(ISNULL(ld.sum_of_fine, 0))
+    FROM loan l
     JOIN loan_detail ld ON l.loan_id = ld.loan_id
-    WHERE l.member_id = @member_id 
-      AND ld.return_date IS NULL 
-      AND ld.overdue_date < GETDATE();
-    
-    IF @SoSachQuaHan > 0
-    BEGIN
-        PRINT N'Từ chối: Độc giả này đang có sách quá hạn, không được phép mượn thêm!';
-    END
-    ELSE
-    BEGIN
-        -- Nếu không có sách quá hạn thì cho phép mượn
-        INSERT INTO loan (loan_id, member_id, librarian_id, policy_id, loan_date) 
-        VALUES (@loan_id, @member_id, @librarian_id, @policy_id, GETDATE());
-        PRINT N'Thành công: Đã tạo phiếu mượn sách mới!';
-    END
+    WHERE l.member_id = @member_id;
+
+    RETURN ISNULL(@TongTien, 0);
 END
 GO
 
--- 2. Trả sách và tự động tính tiền phạt nếu trễ hạn
-CREATE PROCEDURE sp_TraSach
-    @loan_id VARCHAR(20),
-    @book_copy_id VARCHAR(20)
+-- 2. Function (Scalar): Đếm số lượng sách đang mượn (chưa trả) của một độc giả
+CREATE FUNCTION fn_SoSachDangMuon (@member_id VARCHAR(20))
+RETURNS INT
 AS
 BEGIN
-    DECLARE @NgayQuaHan DATE;
-    DECLARE @SoNgayTre INT;
-    DECLARE @TienPhat FLOAT;
-    
-    -- Lấy mốc thời gian phải trả của cuốn sách này
-    SELECT @NgayQuaHan = overdue_date
-    FROM loan_detail 
-    WHERE loan_id = @loan_id AND book_copy_id = @book_copy_id;
-    
-    -- Kiểm tra trễ hạn
-    IF GETDATE() > @NgayQuaHan
-    BEGIN
-        SET @SoNgayTre = DATEDIFF(DAY, @NgayQuaHan, GETDATE());
-        SET @TienPhat = @SoNgayTre * 5000; -- Phạt 5,000 VND cho mỗi ngày trễ
-        PRINT N'Thành công: Trả sách trễ hạn. Bạn bị phạt ' + CAST(@TienPhat AS VARCHAR) + N' VND';
-    END
-    ELSE
-    BEGIN
-        SET @TienPhat = 0;
-        PRINT N'Thành công: Trả sách đúng hạn, không bị phạt tiền.';
-    END
-    
-    -- Cập nhật ngày trả và tiền phạt vào bảng chi tiết mượn
-    UPDATE loan_detail 
-    SET return_date = GETDATE(), sum_of_fine = @TienPhat
-    WHERE loan_id = @loan_id AND book_copy_id = @book_copy_id;
+    DECLARE @SoSach INT = 0;
+    SELECT @SoSach = COUNT(*)
+    FROM loan l
+    JOIN loan_detail ld ON l.loan_id = ld.loan_id
+    WHERE l.member_id = @member_id AND ld.return_date IS NULL;
+
+    RETURN @SoSach;
 END
 GO
 
--- 3. Thêm người dùng mới (Kiểm tra tránh trùng lặp mã)
-CREATE PROCEDURE sp_ThemThanhVien
-    @member_id VARCHAR(20),
-    @name NVARCHAR(50),
-    @address NVARCHAR(100),
-    @phone_number VARCHAR(15)
+-- 3. Function (Table-valued): Lấy danh sách các cuốn sách đang quá hạn chưa trả của hệ thống
+CREATE FUNCTION fn_DanhSachSachQuaHan ()
+RETURNS TABLE
+AS
+RETURN (
+    SELECT 
+        l.member_id, 
+        m.name AS member_name, 
+        bc.book_id, 
+        b.name_book, 
+        ld.overdue_date,
+        DATEDIFF(DAY, ld.overdue_date, GETDATE()) AS days_overdue
+    FROM loan l
+    JOIN member m ON l.member_id = m.member_id
+    JOIN loan_detail ld ON l.loan_id = ld.loan_id
+    JOIN book_copy bc ON ld.book_copy_id = bc.book_copy_id
+    JOIN book b ON bc.book_id = b.book_id
+    WHERE ld.return_date IS NULL AND ld.overdue_date < GETDATE()
+);
+GO
+
+-- 4. Function (Scalar): Đếm số lượng bản sao (book copy) hiện có của một đầu sách cụ thể
+CREATE FUNCTION fn_SoLuongBanSao (@book_id VARCHAR(20))
+RETURNS INT
 AS
 BEGIN
-    DECLARE @TonTai INT;
+    DECLARE @SoLuong INT = 0;
+    SELECT @SoLuong = COUNT(*)
+    FROM book_copy
+    WHERE book_id = @book_id;
 
-    -- Kiểm tra xem member_id đã tồn tại hay chưa
-    SELECT @TonTai = COUNT(*) FROM member WHERE member_id = @member_id;
-
-    IF @TonTai > 0
-    BEGIN
-        PRINT N'Thiếu: Mã thành viên này đã tồn tại trong hệ thống. Vui lòng thử mã khác!';
-    END
-    ELSE
-    BEGIN
-        INSERT INTO member (member_id, name, address, phone_number)
-        VALUES (@member_id, @name, @address, @phone_number);
-        PRINT N'Thành công: Đã thêm thành viên mới!';
-    END
+    RETURN @SoLuong;
 END
 GO
 
--- 4. Gắn thể loại cho sách (Phải kiểm tra xem sách/thể loại có thật không)
-CREATE PROCEDURE sp_ThemSachVaoDanhMuc
-    @book_id VARCHAR(20),
-    @category_id VARCHAR(20)
+-- 5. Function (Table-valued): Lấy danh sách các sách thuộc một thể loại cụ thể
+CREATE FUNCTION fn_SachTheoTheLoai (@category_id VARCHAR(20))
+RETURNS TABLE
 AS
-BEGIN
-    DECLARE @KiemTraSach INT;
-    DECLARE @KiemTraDanhMuc INT;
-
-    SELECT @KiemTraSach = COUNT(*) FROM book WHERE book_id = @book_id;
-    SELECT @KiemTraDanhMuc = COUNT(*) FROM category WHERE category_id = @category_id;
-
-    IF @KiemTraSach = 0
-    BEGIN
-        PRINT N'Từ chối: Quyển sách này không tồn tại trong hệ thống!';
-    END
-    ELSE IF @KiemTraDanhMuc = 0
-    BEGIN
-        PRINT N'Từ chối: Thể loại danh mục này không tồn tại!';
-    END
-    ELSE
-    BEGIN
-        INSERT INTO book_category (book_id, category_id) VALUES (@book_id, @category_id);
-        PRINT N'Thành công: Đã gắn thể loại cho sách!';
-    END
-END
-GO
-
--- 5. Xóa sách khỏi hệ thống (Kiểm tra xem có đang bị mượn không)
-CREATE PROCEDURE sp_XoaSach
-    @book_id VARCHAR(20)
-AS
-BEGIN
-    DECLARE @SoNguoiDangMuon INT;
-
-    -- Đếm xem có bao nhiêu bản sao của quyển sách này đang được mượn nhưng chưa trả
-    SELECT @SoNguoiDangMuon = COUNT(*)
-    FROM book_copy bc
-    JOIN loan_detail ld ON bc.book_copy_id = ld.book_copy_id
-    WHERE bc.book_id = @book_id AND ld.return_date IS NULL;
-
-    IF @SoNguoiDangMuon > 0
-    BEGIN
-        PRINT N'Từ chối: Không thể xóa sách này vì đang có độc giả mượn chưa trả!';
-    END
-    ELSE
-    BEGIN
-        -- Nếu không có ai mượn mới bắt đầu xóa các khóa ngoại và khóa chính
-        DELETE FROM book_category WHERE book_id = @book_id;
-        DELETE FROM book_of_author WHERE book_id = @book_id;
-        DELETE FROM book_copy WHERE book_id = @book_id;
-        DELETE FROM book WHERE book_id = @book_id;
-        PRINT N'Thành công: Đã xóa sách khỏi hệ thống an toàn!';
-    END
-END
+RETURN (
+    SELECT 
+        b.book_id,
+        b.name_book,
+        c.category_name,
+        p.publisher_name
+    FROM book b
+    JOIN book_category bc ON b.book_id = bc.book_id
+    JOIN category c ON bc.category_id = c.category_id
+    LEFT JOIN publisher p ON b.publisher_id = p.publisher_id
+    WHERE c.category_id = @category_id
+);
 GO
