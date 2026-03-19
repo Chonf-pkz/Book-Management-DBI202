@@ -20,9 +20,6 @@ begin
 	print 'Not exist'
 end
 
-exec InformationOfPublisher 'Pearson'
-drop procedure InformationOfPublisher
-
 
 
 
@@ -37,8 +34,7 @@ begin
 	order by TheNumberOfBook desc
 end
 
-exec NumberOfBooks
-drop procedure NumberOfBooks
+
 
 
 
@@ -63,7 +59,6 @@ begin
 	print 'Not exist'
 end
 
-exec InformationOfBookGenres 'Computing'
 
 
 
@@ -89,8 +84,7 @@ begin
 	print 'Not exist'
 end
 
-exec InformationOfAuthor 'Robert Martin'
-drop procedure InformationOfAuthor
+
 
 
 -- Thông tin sách và tác giả từ năm N đến nay
@@ -112,8 +106,6 @@ begin
 	print 'Time exceeds'
 end
 
-exec GetBooksAndAuthorsFromYear 2022
-drop procedure GetBooksAndAuthorsFromYear
 
 
 
