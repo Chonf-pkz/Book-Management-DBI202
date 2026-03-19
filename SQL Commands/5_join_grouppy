@@ -1,0 +1,33 @@
+---1. thống kê số lượng sách của mỗi thể loại (category)
+select c.category_name, count(bc.book_id) as total_books 
+from category c join book_category bc on c.category_id = bc.category_id 
+group by c.category_name;
+
+
+---2. thống kê số lượng sách của mỗi tác giả (author)
+select a.author_name, count(ba.book_id) as total_books 
+from author a join book_of_author ba on a.author_id = ba.author_id 
+group by a.author_name;
+
+
+---3. đếm số lượng bản quyển (copy) của mỗi đầu sách (book)
+select b.name_book, count(bc.book_copy_id) as total_copies 
+from book b join book_copy bc on b.book_id = bc.book_id 
+group by b.name_book;
+
+
+---4. đếm số lượng phiếu mượn của mỗi độc giả (member)
+select m.name as member_name, count(l.loan_id) as total_loans 
+from member m join loan l on m.member_id = l.member_id 
+group by m.name;
+
+
+---5. thống kê số lượng sách do mỗi nhà xuất bản (publisher) cung cấp
+select p.publisher_name, count(b.book_id) as total_books 
+from publisher p join book b on p.publisher_id = b.publisher_id 
+group by p.publisher_name;
+
+
+
+
+
