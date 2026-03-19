@@ -61,50 +61,32 @@ END
 
 
 
-CREATE TRIGGER trg_limit_books
+Create TRIGGER trg_limit_books
 ON loan_detail
 AFTER INSERT
 AS
 BEGIN
 
-IF EXISTS(
-
-SELECT m.member_id
-FROM inserted i
-JOIN loan l ON l.loan_id = i.loan_id
-JOIN member m ON m.member_id = l.member_id
-JOIN policy_rule p ON p.policy_id = l.policy_id
-
-WHERE (
-
-SELECT COUNT(*)
-FROM loan_detail ld
-JOIN loan l2 ON ld.loan_id=l2.loan_id
-WHERE l2.member_id = m.member_id
-AND ld.return_date IS NULL
-
-) >= p.maximum_loan_period
-
-)
-
-BEGIN
-
-RAISERROR('Borrow limit exceeded',16,1)
-ROLLBACK
+    IF EXISTS(
+        SELECT m.member_id
+        FROM inserted i
+        JOIN loan l ON l.loan_id = i.loan_id
+        JOIN member m ON m.member_id = l.member_id
+        JOIN policy_rule p ON p.policy_id = l.policy_id
+        WHERE (
+            SELECT COUNT(*)
+            FROM loan_detail ld
+            JOIN loan l2 ON ld.loan_id=l2.loan_id
+            WHERE l2.member_id = m.member_id
+            AND ld.return_date IS NULL
+        ) >= p.maximum_loan_period
+    )
+    BEGIN
+        RAISERROR('Borrow limit exceeded',16,1)
+        ROLLBACK
+    END
 
 END
-
-ELSE
-
-BEGIN
-
-INSERT INTO loan_detail
-SELECT * FROM inserted
-
-END
-
-END
-
 
 -------Tự động tạo overdue_date khi thêm loan_detail--------
 
