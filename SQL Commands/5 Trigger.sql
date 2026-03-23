@@ -128,3 +128,27 @@ WHERE book_id IN (SELECT book_id FROM deleted)
 END
 
 END
+
+
+
+
+---ràng buộc các book copy chung 1 loan ---
+
+CREATE TRIGGER trg_same_return_date
+ON loan_detail
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT loan_id
+        FROM loan_detail
+        WHERE loan_id IN (SELECT loan_id FROM inserted)
+        AND return_date IS NOT NULL
+        GROUP BY loan_id
+        HAVING COUNT(DISTINCT return_date) > 1
+    )
+    BEGIN
+        RAISERROR('Return date must be the same for the same loan',16,1)
+        ROLLBACK TRANSACTION
+    END
+END
