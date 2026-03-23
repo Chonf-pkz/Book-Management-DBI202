@@ -55,16 +55,26 @@ INSERT INTO loan VALUES
 
 -- 20 Loan Details (Chi tiết mượn)
 INSERT INTO loan_detail (loan_id, book_copy_id, overdue_date, return_date, sum_of_fine) VALUES 
-('LN01', 'BC01', '2026-01-15', '2026-01-14', 0), ('LN01', 'BC02', '2026-01-15', '2026-01-16', 2.0),
-('LN02', 'BC03', '2026-01-19', '2026-01-18', 0), ('LN02', 'BC04', '2026-01-19', NULL, 0),
-('LN03', 'BC05', '2026-01-17', '2026-01-20', 15.0), ('LN03', 'BC06', '2026-01-17', NULL, 0),
-('LN04', 'BC07', '2026-01-29', '2026-01-28', 0), ('LN04', 'BC08', '2026-01-29', NULL, 0),
-('LN05', 'BC09', '2026-01-27', '2026-01-27', 0), ('LN05', 'BC10', '2026-01-27', '2026-01-30', 15.0),
-('LN06', 'BC11', '2026-02-08', NULL, 0), ('LN06', 'BC12', '2026-02-08', NULL, 0),
-('LN07', 'BC13', '2026-02-11', NULL, 0), ('LN07', 'BC14', '2026-02-11', NULL, 0),
-('LN08', 'BC15', '2026-02-05', NULL, 0), ('LN08', 'BC16', '2026-02-05', NULL, 0),
-('LN09', 'BC17', '2026-02-13', NULL, 0), ('LN09', 'BC18', '2026-02-13', NULL, 0),
-('LN10', 'BC19', '2026-02-07', NULL, 0), ('LN10', 'BC20', '2026-02-07', NULL, 0);
+('LN01', 'BC01', '2026-01-15', '2026-01-16', 2.0),  -- Trả cùng ngày 16/01
+('LN01', 'BC02', '2026-01-15', '2026-01-16', 2.0),
+('LN02', 'BC03', '2026-01-19', NULL, 0),             -- Có 1 cuốn chưa trả -> đồng bộ NULL
+('LN02', 'BC04', '2026-01-19', NULL, 0),
+('LN03', 'BC05', '2026-01-17', NULL, 0),             -- Có 1 cuốn chưa trả -> đồng bộ NULL
+('LN03', 'BC06', '2026-01-17', NULL, 0),
+('LN04', 'BC07', '2026-01-29', NULL, 0),             -- Có 1 cuốn chưa trả -> đồng bộ NULL
+('LN04', 'BC08', '2026-01-29', NULL, 0),
+('LN05', 'BC09', '2026-01-27', '2026-01-30', 15.0),  -- Trả cùng ngày 30/01 (trễ 3 ngày, phạt 15$)
+('LN05', 'BC10', '2026-01-27', '2026-01-30', 15.0),
+('LN06', 'BC11', '2026-02-08', NULL, 0), 
+('LN06', 'BC12', '2026-02-08', NULL, 0),
+('LN07', 'BC13', '2026-02-11', NULL, 0), 
+('LN07', 'BC14', '2026-02-11', NULL, 0),
+('LN08', 'BC15', '2026-02-05', NULL, 0), 
+('LN08', 'BC16', '2026-02-05', NULL, 0),
+('LN09', 'BC17', '2026-02-13', NULL, 0), 
+('LN09', 'BC18', '2026-02-13', NULL, 0),
+('LN10', 'BC19', '2026-02-07', NULL, 0), 
+('LN10', 'BC20', '2026-02-07', NULL, 0);
 
 INSERT INTO book_of_author (author_id, book_id) VALUES 
 ('A1', 'B01'), ('A1', 'B02'), ('A1', 'B11'), ('A1', 'B20'), 
@@ -177,19 +187,18 @@ INSERT INTO loan (loan_id, member_id, librarian_id, policy_id, loan_date) VALUES
 -- Loan detail mới (mượn thêm Harry Potter, Clean Code, và vài cuốn khác)
 INSERT INTO loan_detail (loan_id, book_copy_id, overdue_date, return_date, sum_of_fine) VALUES
 -- LN11 - James Bond mượn thêm Harry Potter
-('LN11', 'BC22', '2026-02-19', '2026-02-18', 0),     -- trả đúng hạn
-('LN11', 'BC30', '2026-02-19', NULL, 0),             -- chưa trả (Clean Code)
--- LN12 - Bruce Wayne mượn muộn → phạt
-('LN12', 'BC05', '2026-02-24', '2026-03-01', 35.0),  -- 1984 trả muộn (POL2: 5$/ngày × 7 ngày)
-('LN12', 'BC31', '2026-02-24', '2026-02-22', 0),     -- Clean Code đúng hạn
+('LN11', 'BC22', '2026-02-19', NULL, 0),             -- Có 1 cuốn chưa trả -> đồng bộ NULL
+('LN11', 'BC30', '2026-02-19', NULL, 0),             
+-- LN12 - Bruce Wayne mượn muộn -> phạt
+('LN12', 'BC05', '2026-02-24', '2026-03-01', 25.0),  -- Trả cùng ngày 01/03 (Năm 2026 T2 có 28 ngày, trễ 5 ngày -> phạt 25$)
+('LN12', 'BC31', '2026-02-24', '2026-03-01', 25.0),  
 -- LN13 - Thor mượn Fantasy & Science
-('LN13', 'BC26', '2026-03-01', NULL, 0),             -- The Hobbit (chưa trả)
-('LN13', 'BC47', '2026-03-01', '2026-02-28', 0),     -- SpaceX History
+('LN13', 'BC26', '2026-03-01', NULL, 0),             -- Có 1 cuốn chưa trả -> đồng bộ NULL
+('LN13', 'BC47', '2026-03-01', NULL, 0),             
 -- LN14 - Peter Parker mượn Computing
-('LN14', 'BC33', '2026-03-06', '2026-03-04', 0),     -- Java Design Patterns
+('LN14', 'BC33', '2026-03-06', '2026-03-04', 0),     
 -- LN15 - Lucifer mượn Fiction
-('LN15', 'BC44', '2026-03-11', NULL, 0);             -- The Shining (chưa trả)
-
+('LN15', 'BC44', '2026-03-11', NULL, 0);
 
 
 -- Thêm 8 loan mới (tháng 2-3/2026)
@@ -210,29 +219,16 @@ INSERT INTO loan (loan_id, member_id, librarian_id, policy_id, loan_date) VALUES
 
 -- Thêm loan_detail - ưu tiên mượn B01 (Harry Potter 1) nhiều lần, dùng các bản sao khác nhau
 INSERT INTO loan_detail (loan_id, book_copy_id, overdue_date, return_date, sum_of_fine) VALUES
--- LN16 - Loki
-('LN16', 'BC01', '2026-02-15', '2026-02-14', 0),          -- trả đúng hạn
-
--- LN17 - Barry
-('LN17', 'BC21', '2026-02-17', NULL, 0),                  -- chưa trả (đang mượn)
-
--- LN18 - Oliver (POL2: 5$/ngày, trả muộn)
-('LN18', 'BC22', '2026-02-21', '2026-02-25', 20.0),       -- muộn 4 ngày → 20$
-
--- LN19 - Natasha
-('LN19', 'BC23', '2026-02-26', '2026-02-24', 0),          -- trả sớm
-
--- LN20 - Hal
-('LN20', 'BC01', '2026-03-04', '2026-03-03', 0),          -- trả đúng (mượn lại bản cũ)
-
--- LN21 - Mazikeen (POL2, trả muộn nặng)
-('LN21', 'BC21', '2026-03-08', '2026-03-15', 35.0),       -- muộn 7 ngày → 35$
-
--- LN22 - Diana
-('LN22', 'BC22', '2026-03-15', NULL, 0),                  -- chưa trả
-
--- LN23 - Tony Stark
-('LN23', 'BC23', '2026-03-19', '2026-03-18', 0);          -- trả đúng hạn
+('LN16', 'BC01', '2026-02-15', '2026-02-14', 0),
+('LN17', 'BC21', '2026-02-17', NULL, 0),
+('LN18', 'BC22', '2026-02-21', '2026-02-25', 20.0),
+('LN19', 'BC23', '2026-02-26', '2026-02-24', 0),
+('LN20', 'BC01', '2026-03-04', '2026-03-03', 0),
+('LN21', 'BC21', '2026-03-08', '2026-03-15', 35.0),
+('LN22', 'BC22', '2026-03-15', NULL, 0),
+('LN23', 'BC23', '2026-03-19', '2026-03-18', 0),
+('LN24', 'BC01', '2026-03-22', NULL, 0),
+('LN25', 'BC21', '2026-03-24', '2026-03-22', 0);
 
 
 -- (Tùy chọn) Thêm 1-2 loan nữa nếu muốn Harry Potter 1 vượt trội hẳn
